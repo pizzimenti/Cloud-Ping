@@ -6,11 +6,7 @@ plugins {
 
 android {
     namespace = "com.gennakersystems.cloudping"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.gennakersystems.cloudping"

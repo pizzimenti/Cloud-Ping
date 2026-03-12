@@ -1,5 +1,6 @@
 package com.gennakersystems.cloudping
 
+import android.content.ClipData
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.WindowManager
@@ -40,10 +41,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -121,12 +122,12 @@ fun PingStatus(uiState: PingUiState, modifier: Modifier = Modifier) {
 @Composable
 fun ErrorCard(modifier: Modifier = Modifier) {
     Card(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.DarkGray),
         border = BorderStroke(2.dp, Color(0xFFFFA500)) // Orange
     ) {
         Box(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -141,7 +142,7 @@ fun ErrorCard(modifier: Modifier = Modifier) {
 @Composable
 fun Modifier.copyOnClick(textToCopy: String): Modifier {
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     
     val anim = remember { Animatable(0f) }
@@ -155,10 +156,14 @@ fun Modifier.copyOnClick(textToCopy: String): Modifier {
                 onTap = { offset ->
                     if (textToCopy.isNotEmpty() && textToCopy != "Error" && textToCopy != "N/A" && textToCopy != "Loading...") {
                         tapOffset = offset
-                        clipboardManager.setText(AnnotatedString(textToCopy))
-                        Toast.makeText(context, "Copied to Clipboard", Toast.LENGTH_SHORT).show()
                         
+                        // New Clipboard API requires CoroutineScope for setClipEntry
                         scope.launch {
+                            val clipData = ClipData.newPlainText("CloudPing copy", textToCopy)
+                            val clipEntry = ClipEntry(clipData)
+                            clipboard.setClipEntry(clipEntry)
+                            Toast.makeText(context, "Copied to Clipboard", Toast.LENGTH_SHORT).show()
+
                             anim.snapTo(0f)
                             anim.animateTo(1f, animationSpec = tween(1000))
                             anim.snapTo(0f)
@@ -194,8 +199,8 @@ fun Modifier.copyOnClick(textToCopy: String): Modifier {
 @Composable
 fun PingCard(name: String, ip: String, ping: String, modifier: Modifier = Modifier, isLandscape: Boolean = false) {
     val padding = if (isLandscape) 8.dp else 16.dp
-    val titleSize = if (isLandscape) 16.sp else 20.sp
-    val valueSize = if (isLandscape) 36.sp else 48.sp
+    val titleSize = if (isLandscape) 14.sp else 16.sp
+    val valueSize = if (isLandscape) 32.sp else 40.sp
 
     if (ping == "Error" || ping == "N/A") {
         ErrorCard(modifier)
@@ -216,11 +221,13 @@ fun PingCard(name: String, ip: String, ping: String, modifier: Modifier = Modifi
                     text = "$name ($ip)",
                     color = Color.White,
                     fontSize = titleSize,
+                    maxLines = 1
                 )
                 Text(
                     text = ping,
                     color = Color.White,
                     fontSize = valueSize,
+                    maxLines = 1
                 )
             }
         }
@@ -230,8 +237,8 @@ fun PingCard(name: String, ip: String, ping: String, modifier: Modifier = Modifi
 @Composable
 fun InternalIpCard(ip: String, modifier: Modifier = Modifier, isLandscape: Boolean = false) {
     val padding = if (isLandscape) 8.dp else 16.dp
-    val titleSize = if (isLandscape) 16.sp else 20.sp
-    val valueSize = if (isLandscape) 36.sp else 48.sp
+    val titleSize = if (isLandscape) 14.sp else 16.sp
+    val valueSize = if (isLandscape) 32.sp else 40.sp
 
     if (ip == "Error" || ip == "N/A") {
         ErrorCard(modifier)
@@ -254,11 +261,13 @@ fun InternalIpCard(ip: String, modifier: Modifier = Modifier, isLandscape: Boole
                     text = "Internal IP",
                     color = Color.White,
                     fontSize = titleSize,
+                    maxLines = 1
                 )
                 Text(
                     text = ip,
                     color = Color.White,
                     fontSize = valueSize,
+                    maxLines = 1
                 )
             }
         }
@@ -268,8 +277,8 @@ fun InternalIpCard(ip: String, modifier: Modifier = Modifier, isLandscape: Boole
 @Composable
 fun PublicIpCard(ip: String, modifier: Modifier = Modifier, isLandscape: Boolean = false) {
     val padding = if (isLandscape) 8.dp else 16.dp
-    val titleSize = if (isLandscape) 16.sp else 20.sp
-    val valueSize = if (isLandscape) 36.sp else 48.sp
+    val titleSize = if (isLandscape) 14.sp else 16.sp
+    val valueSize = if (isLandscape) 28.sp else 36.sp
 
     if (ip == "Error" || ip == "N/A") {
         ErrorCard(modifier)
@@ -292,11 +301,13 @@ fun PublicIpCard(ip: String, modifier: Modifier = Modifier, isLandscape: Boolean
                     text = "Public IP",
                     color = Color.White,
                     fontSize = titleSize,
+                    maxLines = 1
                 )
                 Text(
                     text = ip,
                     color = Color.White,
                     fontSize = valueSize,
+                    maxLines = 1
                 )
             }
         }
@@ -306,8 +317,8 @@ fun PublicIpCard(ip: String, modifier: Modifier = Modifier, isLandscape: Boolean
 @Composable
 fun ProviderCard(provider: String, modifier: Modifier = Modifier, isLandscape: Boolean = false) {
     val padding = if (isLandscape) 8.dp else 16.dp
-    val titleSize = if (isLandscape) 16.sp else 20.sp
-    val valueSize = if (isLandscape) 28.sp else 24.sp
+    val titleSize = if (isLandscape) 14.sp else 16.sp
+    val valueSize = if (isLandscape) 20.sp else 24.sp
 
     if (provider == "Error" || provider == "N/A") {
         ErrorCard(modifier)
@@ -330,6 +341,7 @@ fun ProviderCard(provider: String, modifier: Modifier = Modifier, isLandscape: B
                     text = "Provider",
                     color = Color.White,
                     fontSize = titleSize,
+                    maxLines = 1
                 )
                 Text(
                     text = provider,

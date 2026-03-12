@@ -58,8 +58,8 @@ class PingViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             networkMonitor.isConnected
                 .distinctUntilChanged()
-                .collect {
-                    if (it) {
+                .collect { connected ->
+                    if (connected) {
                         startPinging()
                     } else {
                         uiState = PingUiState(
@@ -78,7 +78,7 @@ class PingViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun fetchInternalIp() {
         viewModelScope.launch {
-            val internalIp = getInternalIp(getApplication()) ?: "Error"
+            val internalIp = getInternalIp(getApplication())
             uiState = uiState.copy(internalIp = internalIp)
         }
     }
@@ -139,22 +139,26 @@ class PingViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val process = ProcessBuilder("ping", "-c", "1", host).start()
                 val reader = BufferedReader(InputStreamReader(process.inputStream))
-                var line: String?
                 var pingTime = "N/A"
-                while (reader.readLine().also { line = it } != null) {
-                    if (line!!.contains("time=")) {
-                        val timeValue = line!!.split("time=")[1].split(" ")[0]
-                        pingTime = if (withDecimal) {
-                            val parts = timeValue.split(".")
-                            if (parts.size > 1) {
-                                "${parts[0]}.${parts[1].take(1)} ms"
+                
+                reader.use { r ->
+                    var line = r.readLine()
+                    while (line != null) {
+                        if (line.contains("time=")) {
+                            val timeValue = line.split("time=")[1].split(" ")[0]
+                            pingTime = if (withDecimal) {
+                                val parts = timeValue.split(".")
+                                if (parts.size > 1) {
+                                    "${parts[0]}.${parts[1].take(1)} ms"
+                                } else {
+                                    "$timeValue ms"
+                                }
                             } else {
-                                "$timeValue ms"
+                                "${timeValue.split(".")[0]} ms"
                             }
-                        } else {
-                            "${timeValue.split(".")[0]} ms"
+                            break
                         }
-                        break
+                        line = r.readLine()
                     }
                 }
                 process.waitFor()
