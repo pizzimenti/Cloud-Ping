@@ -87,17 +87,17 @@ fun PingStatus(uiState: PingUiState, modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                PublicIpCard(ip = uiState.publicIp, isLandscape = isLandscape)
-                ProviderCard(provider = uiState.provider, isLandscape = isLandscape)
-                PingCard(name = "Cloudflare", ip = uiState.cloudflareIp, ping = uiState.cloudflarePing, isLandscape = isLandscape)
+                PublicIpCard(ip = uiState.publicIp, isLandscape = true)
+                ProviderCard(provider = uiState.provider, isLandscape = true)
+                PingCard(name = "Cloudflare", ip = uiState.cloudflareIp, ping = uiState.cloudflarePing, isLandscape = true)
             }
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                InternalIpCard(ip = uiState.internalIp, isLandscape = isLandscape)
-                PingCard(name = "Google", ip = uiState.googleIp, ping = uiState.googlePing, isLandscape = isLandscape)
-                PingCard(name = "Gateway", ip = uiState.gatewayIp, ping = uiState.gatewayPing, isLandscape = isLandscape)
+                InternalIpCard(ip = uiState.internalIp, isLandscape = true)
+                PingCard(name = "Google", ip = uiState.googleIp, ping = uiState.googlePing, isLandscape = true)
+                PingCard(name = "Gateway", ip = uiState.gatewayIp, ping = uiState.gatewayPing, isLandscape = true)
             }
         }
     } else {
@@ -108,12 +108,12 @@ fun PingStatus(uiState: PingUiState, modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            PublicIpCard(ip = uiState.publicIp, isLandscape = isLandscape)
-            ProviderCard(provider = uiState.provider, isLandscape = isLandscape)
-            PingCard(name = "Cloudflare", ip = uiState.cloudflareIp, ping = uiState.cloudflarePing, isLandscape = isLandscape)
-            PingCard(name = "Google", ip = uiState.googleIp, ping = uiState.googlePing, isLandscape = isLandscape)
-            InternalIpCard(ip = uiState.internalIp, isLandscape = isLandscape)
-            PingCard(name = "Gateway", ip = uiState.gatewayIp, ping = uiState.gatewayPing, isLandscape = isLandscape)
+            PublicIpCard(ip = uiState.publicIp, isLandscape = false)
+            ProviderCard(provider = uiState.provider, isLandscape = false)
+            PingCard(name = "Cloudflare", ip = uiState.cloudflareIp, ping = uiState.cloudflarePing, isLandscape = false)
+            PingCard(name = "Google", ip = uiState.googleIp, ping = uiState.googlePing, isLandscape = false)
+            InternalIpCard(ip = uiState.internalIp, isLandscape = false)
+            PingCard(name = "Gateway", ip = uiState.gatewayIp, ping = uiState.gatewayPing, isLandscape = false)
         }
     }
 }
