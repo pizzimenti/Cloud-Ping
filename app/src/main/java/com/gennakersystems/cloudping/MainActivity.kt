@@ -1,7 +1,6 @@
 package com.gennakersystems.cloudping
 
 import android.content.ClipData
-import android.content.res.Configuration
 import android.os.Bundle
 import android.view.WindowManager
 import android.widget.Toast
@@ -28,6 +27,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,7 +45,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -53,16 +54,19 @@ import com.gennakersystems.cloudping.ui.theme.CloudPingTheme
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
         setContent {
+            val windowSizeClass = calculateWindowSizeClass(this)
             CloudPingTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
                     val pingViewModel: PingViewModel = viewModel()
                     PingStatus(
                         uiState = pingViewModel.uiState,
+                        windowWidthSizeClass = windowSizeClass.widthSizeClass,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -72,11 +76,15 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun PingStatus(uiState: PingUiState, modifier: Modifier = Modifier) {
-    val configuration = LocalConfiguration.current
-    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+fun PingStatus(
+    uiState: PingUiState,
+    windowWidthSizeClass: WindowWidthSizeClass,
+    modifier: Modifier = Modifier
+) {
+    // Show two columns if we have a medium or expanded width (tablets, foldables, or landscape phones)
+    val useTwoColumns = windowWidthSizeClass != WindowWidthSizeClass.Compact
 
-    if (isLandscape) {
+    if (useTwoColumns) {
         Row(
             modifier = modifier
                 .safeDrawingPadding()
@@ -88,17 +96,17 @@ fun PingStatus(uiState: PingUiState, modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                PublicIpCard(ip = uiState.publicIp, isLandscape = true)
-                ProviderCard(provider = uiState.provider, isLandscape = true)
-                PingCard(name = "Cloudflare", ip = uiState.cloudflareIp, ping = uiState.cloudflarePing, isLandscape = true)
+                PublicIpCard(ip = uiState.publicIp, isMultiColumn = true)
+                ProviderCard(provider = uiState.provider, isMultiColumn = true)
+                PingCard(name = "Cloudflare", ip = uiState.cloudflareIp, ping = uiState.cloudflarePing, isMultiColumn = true)
             }
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                InternalIpCard(ip = uiState.internalIp, isLandscape = true)
-                PingCard(name = "Google", ip = uiState.googleIp, ping = uiState.googlePing, isLandscape = true)
-                PingCard(name = "Gateway", ip = uiState.gatewayIp, ping = uiState.gatewayPing, isLandscape = true)
+                InternalIpCard(ip = uiState.internalIp, isMultiColumn = true)
+                PingCard(name = "Google", ip = uiState.googleIp, ping = uiState.googlePing, isMultiColumn = true)
+                PingCard(name = "Gateway", ip = uiState.gatewayIp, ping = uiState.gatewayPing, isMultiColumn = true)
             }
         }
     } else {
@@ -109,12 +117,12 @@ fun PingStatus(uiState: PingUiState, modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            PublicIpCard(ip = uiState.publicIp, isLandscape = false)
-            ProviderCard(provider = uiState.provider, isLandscape = false)
-            PingCard(name = "Cloudflare", ip = uiState.cloudflareIp, ping = uiState.cloudflarePing, isLandscape = false)
-            PingCard(name = "Google", ip = uiState.googleIp, ping = uiState.googlePing, isLandscape = false)
-            InternalIpCard(ip = uiState.internalIp, isLandscape = false)
-            PingCard(name = "Gateway", ip = uiState.gatewayIp, ping = uiState.gatewayPing, isLandscape = false)
+            PublicIpCard(ip = uiState.publicIp, isMultiColumn = false)
+            ProviderCard(provider = uiState.provider, isMultiColumn = false)
+            PingCard(name = "Cloudflare", ip = uiState.cloudflareIp, ping = uiState.cloudflarePing, isMultiColumn = false)
+            PingCard(name = "Google", ip = uiState.googleIp, ping = uiState.googlePing, isMultiColumn = false)
+            InternalIpCard(ip = uiState.internalIp, isMultiColumn = false)
+            PingCard(name = "Gateway", ip = uiState.gatewayIp, ping = uiState.gatewayPing, isMultiColumn = false)
         }
     }
 }
@@ -197,10 +205,10 @@ fun Modifier.copyOnClick(textToCopy: String): Modifier {
 }
 
 @Composable
-fun PingCard(name: String, ip: String, ping: String, modifier: Modifier = Modifier, isLandscape: Boolean = false) {
-    val padding = if (isLandscape) 8.dp else 16.dp
-    val titleSize = if (isLandscape) 14.sp else 16.sp
-    val valueSize = if (isLandscape) 32.sp else 40.sp
+fun PingCard(name: String, ip: String, ping: String, modifier: Modifier = Modifier, isMultiColumn: Boolean = false) {
+    val padding = if (isMultiColumn) 8.dp else 16.dp
+    val titleSize = if (isMultiColumn) 14.sp else 16.sp
+    val valueSize = if (isMultiColumn) 32.sp else 40.sp
 
     if (ping == "Error" || ping == "N/A") {
         ErrorCard(modifier)
@@ -235,10 +243,10 @@ fun PingCard(name: String, ip: String, ping: String, modifier: Modifier = Modifi
 }
 
 @Composable
-fun InternalIpCard(ip: String, modifier: Modifier = Modifier, isLandscape: Boolean = false) {
-    val padding = if (isLandscape) 8.dp else 16.dp
-    val titleSize = if (isLandscape) 14.sp else 16.sp
-    val valueSize = if (isLandscape) 32.sp else 40.sp
+fun InternalIpCard(ip: String, modifier: Modifier = Modifier, isMultiColumn: Boolean = false) {
+    val padding = if (isMultiColumn) 8.dp else 16.dp
+    val titleSize = if (isMultiColumn) 14.sp else 16.sp
+    val valueSize = if (isMultiColumn) 32.sp else 40.sp
 
     if (ip == "Error" || ip == "N/A") {
         ErrorCard(modifier)
@@ -275,10 +283,10 @@ fun InternalIpCard(ip: String, modifier: Modifier = Modifier, isLandscape: Boole
 }
 
 @Composable
-fun PublicIpCard(ip: String, modifier: Modifier = Modifier, isLandscape: Boolean = false) {
-    val padding = if (isLandscape) 8.dp else 16.dp
-    val titleSize = if (isLandscape) 14.sp else 16.sp
-    val valueSize = if (isLandscape) 28.sp else 36.sp
+fun PublicIpCard(ip: String, modifier: Modifier = Modifier, isMultiColumn: Boolean = false) {
+    val padding = if (isMultiColumn) 8.dp else 16.dp
+    val titleSize = if (isMultiColumn) 14.sp else 16.sp
+    val valueSize = if (isMultiColumn) 28.sp else 36.sp
 
     if (ip == "Error" || ip == "N/A") {
         ErrorCard(modifier)
@@ -315,10 +323,10 @@ fun PublicIpCard(ip: String, modifier: Modifier = Modifier, isLandscape: Boolean
 }
 
 @Composable
-fun ProviderCard(provider: String, modifier: Modifier = Modifier, isLandscape: Boolean = false) {
-    val padding = if (isLandscape) 8.dp else 16.dp
-    val titleSize = if (isLandscape) 14.sp else 16.sp
-    val valueSize = if (isLandscape) 20.sp else 24.sp
+fun ProviderCard(provider: String, modifier: Modifier = Modifier, isMultiColumn: Boolean = false) {
+    val padding = if (isMultiColumn) 8.dp else 16.dp
+    val titleSize = if (isMultiColumn) 14.sp else 16.sp
+    val valueSize = if (isMultiColumn) 20.sp else 24.sp
 
     if (provider == "Error" || provider == "N/A") {
         ErrorCard(modifier)
@@ -355,6 +363,7 @@ fun ProviderCard(provider: String, modifier: Modifier = Modifier, isLandscape: B
 }
 
 
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Preview(showBackground = true, backgroundColor = 0xFF000000)
 @Composable
 fun PingStatusPreview() {
@@ -371,6 +380,7 @@ fun PingStatusPreview() {
                 googlePing = "34 ms",
                 gatewayPing = "5 ms"
             ),
+            windowWidthSizeClass = WindowWidthSizeClass.Compact,
             modifier = Modifier.fillMaxSize()
         )
     }

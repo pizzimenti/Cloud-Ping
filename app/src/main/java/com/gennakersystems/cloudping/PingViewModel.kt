@@ -14,6 +14,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -54,6 +55,7 @@ class PingViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private val networkMonitor = NetworkMonitor(application)
+    private var pingJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -63,6 +65,7 @@ class PingViewModel(application: Application) : AndroidViewModel(application) {
                     if (connected) {
                         startPinging()
                     } else {
+                        stopPinging()
                         uiState = PingUiState(
                             publicIp = "Error",
                             provider = "Error",
@@ -109,8 +112,16 @@ class PingViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private fun stopPinging() {
+        pingJob?.cancel()
+        pingJob = null
+    }
+
     private fun startPinging() {
-        viewModelScope.launch {
+        // Ensure only one loop is running
+        if (pingJob?.isActive == true) return
+
+        pingJob = viewModelScope.launch {
             var networkInfoCounter = 0
             while (true) {
                 if (networkInfoCounter == 0) {
@@ -175,5 +186,6 @@ class PingViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         client.close()
+        stopPinging()
     }
 }
