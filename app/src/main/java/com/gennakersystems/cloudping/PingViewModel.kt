@@ -1,6 +1,7 @@
 package com.gennakersystems.cloudping
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -90,6 +91,7 @@ class PingViewModel(application: Application) : AndroidViewModel(application) {
                     client.get("https://ipinfo.io/json").body<IpInfo>()
                 }
             } catch (e: Exception) {
+                Log.e("PingViewModel", "Error fetching network info", e)
                 null
             }
 
@@ -164,6 +166,7 @@ class PingViewModel(application: Application) : AndroidViewModel(application) {
                 process.waitFor()
                 pingTime
             } catch (e: Exception) {
+                Log.e("PingViewModel", "Error pinging $host", e)
                 "Error"
             }
         }
